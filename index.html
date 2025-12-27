@@ -7,8 +7,251 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://unpkg.com/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .container {
+            min-height: 100vh;
+            padding: 2rem;
+            background-color: #E8F4F8;
+        }
+
+        .max-w-2xl {
+            max-width: 42rem;
+            margin: 0 auto;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #1E5A6E;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #2C7A8C;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2rem;
+        }
+
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .gauge-wrapper {
+            position: relative;
+            width: 20rem;
+            height: 12rem;
+            margin-bottom: 1rem;
+        }
+
+        .gauge-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .gauge-score {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-content {
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .score-number {
+            font-size: 3rem;
+            font-weight: bold;
+            display: block;
+            color: #3B9AB2;
+        }
+
+        .score-category {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 0.25rem;
+            display: block;
+            color: #3B9AB2;
+        }
+
+        .input-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .label {
+            display: block;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #1E5A6E;
+        }
+
+        .textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(59, 154, 178, 0.3);
+            border-radius: 0.5rem;
+            resize: none;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: #3B9AB2;
+        }
+
+        .example-buttons {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .example-btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            border: 1px solid #3B9AB2;
+            border-radius: 9999px;
+            background: white;
+            color: #1E5A6E;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-btn:hover {
+            background-color: #E8F4F8;
+            color: #3B9AB2;
+        }
+
+        .error-message {
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            color: #DC2626;
+        }
+
+        .error-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+        }
+
+        .analyze-btn {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            color: white;
+            background-color: #3B9AB2;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+            background-color: #2A7A8F;
+            transform: scale(1.05);
+        }
+
+        .analyze-btn:disabled {
+            background-color: #78C2D4;
+            cursor: not-allowed;
+        }
+
+        .situation-display {
+            background-color: #F9FAFB;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .situation-text {
+            font-style: italic;
+            color: #1E5A6E;
+        }
+
+        .results-section {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .results-divider {
+            border-top: 1px solid #E5E7EB;
+            padding-top: 1.5rem;
+        }
+
+        .results-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .result-item-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #1E5A6E;
+        }
+
+        .result-box-1 {
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background-color: #E8F4F8;
+        }
+
+        .result-box-2 {
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background-color: #D4EBF1;
+        }
+
+        .result-text {
+            color: #1E5A6E;
+        }
+
+        .try-another-btn {
+            margin-top: 1.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #3B9AB2;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: #3B9AB2;
+            background: transparent;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 1rem;
+        }
+
+        .try-another-btn:hover {
+            background-color: #E8F4F8;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -19,9 +262,16 @@
                 transform: translateY(0);
             }
         }
-        
-        .animate-fadeIn {
-            animation: fadeIn 0.5s ease-out;
+
+        @media (max-width: 640px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .gauge-wrapper {
+                width: 100%;
+                max-width: 20rem;
+            }
         }
     </style>
 </head>
@@ -29,7 +279,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState } = React;
 
         const TRANSLATIONS = {
             "en-US": {
@@ -51,8 +301,7 @@
                 "analysisTitle": "Perspective",
                 "adviceTitle": "What to Consider",
                 "tryAnotherButton": "Evaluate another situation",
-                "failedAnalysis": "Failed to analyze situation. Please try again!",
-                "apiNotAvailable": "This demo requires Claude API access. Please enter a situation to see the interface."
+                "failedAnalysis": "Failed to analyze situation. Please try again!"
             }
         };
 
@@ -90,46 +339,17 @@
                 setError('');
 
                 try {
-                    // Check if Claude API is available
-                    if (typeof window.claude === 'undefined' || typeof window.claude.complete !== 'function') {
-                        // Demo mode - show example result
-                        const demoResult = {
-                            score: 45,
-                            category: "Moderate concern (This needs a conversation)",
-                            judgment: "This situation shows a pattern that's worth addressing. While it may not be intentional, repeated behavior that affects you deserves open communication.",
-                            advice: "Consider having a calm, honest conversation about how this makes you feel. Use 'I' statements and focus on the pattern rather than attacking their character."
-                        };
-                        setResult(demoResult);
-                        animateScore(demoResult.score);
-                        setLoading(false);
-                        return;
-                    }
-
-                    const prompt = `You are a thoughtful relationship counselor analyzing trust situations. Evaluate the following trust concern and rate it on a scale from 0 to 100, where:
-                    - 0-20: Minor concern (This seems like a misunderstanding or one-time slip)
-                    - 21-40: Worth noting (Keep an eye on this pattern)
-                    - 41-60: Moderate concern (This needs a conversation)
-                    - 61-80: Serious concern (Trust has been compromised)
-                    - 81-100: Critical issue (This is a major breach of trust)
-
-                    Situation: "${situation}"
-
-                    Respond ONLY with a valid JSON object in this exact format:
-                    {
-                        "score": [number between 0-100],
-                        "category": "[one of the category names above]",
-                        "judgment": "[A compassionate but honest 1-2 sentence assessment of the situation]",
-                        "advice": "[A practical suggestion for how to approach this in 1-2 sentences]"
-                    }
-
-                    DO NOT OUTPUT ANYTHING OTHER THAN VALID JSON.
-
-                    Please respond in ${locale} language`;
-
-                    const response = await window.claude.complete(prompt);
-                    const data = JSON.parse(response);
-                    setResult(data);
-                    animateScore(data.score);
+                    // Demo mode - show example result
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    const demoResult = {
+                        score: 45,
+                        category: "Moderate concern (This needs a conversation)",
+                        judgment: "This situation shows a pattern that's worth addressing. While it may not be intentional, repeated behavior that affects you deserves open communication.",
+                        advice: "Consider having a calm, honest conversation about how this makes you feel. Use 'I' statements and focus on the pattern rather than attacking their character."
+                    };
+                    setResult(demoResult);
+                    animateScore(demoResult.score);
                 } catch (err) {
                     setError(t('failedAnalysis'));
                     console.error('Error:', err);
@@ -163,19 +383,15 @@
             };
 
             return (
-                <div className="min-h-screen p-8" style={{ backgroundColor: '#E8F4F8' }}>
-                    <div className="max-w-2xl mx-auto">
-                        <h1 className="text-5xl font-bold text-center mb-2" style={{ color: '#1E5A6E' }}>
-                            {t('title')}
-                        </h1>
-                        <p className="text-center mb-8" style={{ color: '#2C7A8C' }}>
-                            {t('subtitle')}
-                        </p>
+                <div className="container">
+                    <div className="max-w-2xl">
+                        <h1 className="title">{t('title')}</h1>
+                        <p className="subtitle">{t('subtitle')}</p>
 
-                        <div className="bg-white rounded-2xl shadow-xl p-8">
-                            <div className="flex flex-col items-center mb-8">
-                                <div className="relative w-80 h-48 mb-4">
-                                    <svg viewBox="0 0 200 130" className="w-full h-full">
+                        <div className="card">
+                            <div className="gauge-container">
+                                <div className="gauge-wrapper">
+                                    <svg viewBox="0 0 200 130" className="gauge-svg">
                                         <path
                                             d="M 30 100 A 70 70 0 0 1 170 100"
                                             fill="none"
@@ -190,20 +406,20 @@
                                             strokeWidth="20"
                                             strokeLinecap="round"
                                             strokeDasharray={getGaugeFillDasharray(displayScore)}
-                                            className="transition-all duration-1500 ease-out"
+                                            style={{transition: 'stroke-dasharray 1.5s ease-out'}}
                                         />
-                                        <text x="28" y="125" textAnchor="middle" className="text-xs font-medium" fill="#1E5A6E">0</text>
-                                        <text x="100" y="15" textAnchor="middle" className="text-xs font-medium" fill="#1E5A6E">50</text>
-                                        <text x="172" y="125" textAnchor="middle" className="text-xs font-medium" fill="#1E5A6E">100</text>
+                                        <text x="28" y="125" textAnchor="middle" fontSize="12" fontWeight="500" fill="#1E5A6E">0</text>
+                                        <text x="100" y="15" textAnchor="middle" fontSize="12" fontWeight="500" fill="#1E5A6E">50</text>
+                                        <text x="172" y="125" textAnchor="middle" fontSize="12" fontWeight="500" fill="#1E5A6E">100</text>
                                     </svg>
                                     
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="text-center mt-16">
-                                            <span className="text-5xl font-bold block" style={{ color: '#3B9AB2' }}>
+                                    <div className="gauge-score">
+                                        <div className="score-content">
+                                            <span className="score-number">
                                                 {result ? displayScore : 0}%
                                             </span>
                                             {result && (
-                                                <span className="text-sm font-medium mt-1 block" style={{ color: '#3B9AB2' }}>
+                                                <span className="score-category">
                                                     {result.category}
                                                 </span>
                                             )}
@@ -212,10 +428,8 @@
                                 </div>
                             </div>
 
-                            <div className="mb-6">
-                                <label className="block text-lg font-semibold mb-3" style={{ color: '#1E5A6E' }}>
-                                    {t('inputLabel')}
-                                </label>
+                            <div className="input-section">
+                                <label className="label">{t('inputLabel')}</label>
                                 
                                 {!result ? (
                                     <>
@@ -223,43 +437,25 @@
                                             value={situation}
                                             onChange={(e) => setSituation(e.target.value)}
                                             placeholder={t('inputPlaceholder')}
-                                            className="w-full p-4 border-2 rounded-lg focus:outline-none resize-none"
-                                            style={{ borderColor: 'rgba(59, 154, 178, 0.3)' }}
-                                            onFocus={(e) => e.target.style.borderColor = '#3B9AB2'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(59, 154, 178, 0.3)'}
+                                            className="textarea"
                                             rows={4}
                                         />
                                         
-                                        <div className="mt-3">
-                                            <div className="flex flex-wrap gap-2">
-                                                {exampleSituations.map((example, index) => (
-                                                    <button
-                                                        key={index}
-                                                        onClick={() => setSituation(example.text)}
-                                                        className="px-3 py-1 text-sm border rounded-full transition-colors"
-                                                        style={{ 
-                                                            borderColor: '#3B9AB2',
-                                                            color: '#1E5A6E',
-                                                            backgroundColor: 'white'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.target.style.backgroundColor = '#E8F4F8';
-                                                            e.target.style.color = '#3B9AB2';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.target.style.backgroundColor = 'white';
-                                                            e.target.style.color = '#1E5A6E';
-                                                        }}
-                                                    >
-                                                        {example.label}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                        <div className="example-buttons">
+                                            {exampleSituations.map((example, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => setSituation(example.text)}
+                                                    className="example-btn"
+                                                >
+                                                    {example.label}
+                                                </button>
+                                            ))}
                                         </div>
                                         
                                         {error && (
-                                            <div className="mt-3 flex items-center text-red-600">
-                                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <div className="error-message">
+                                                <svg className="error-icon" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                 </svg>
                                                 <span>{error}</span>
@@ -269,42 +465,33 @@
                                         <button
                                             onClick={analyzeSituation}
                                             disabled={loading}
-                                            className="mt-4 w-full py-4 rounded-lg font-bold text-white transition-all transform hover:scale-105"
-                                            style={{
-                                                backgroundColor: loading ? '#78C2D4' : '#3B9AB2',
-                                            }}
-                                            onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#2A7A8F')}
-                                            onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = '#3B9AB2')}
+                                            className="analyze-btn"
                                         >
                                             {loading ? t('analyzingButton') : t('analyzeButton')}
                                         </button>
                                     </>
                                 ) : (
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <p className="italic" style={{ color: '#1E5A6E' }}>"{situation}"</p>
+                                    <div className="situation-display">
+                                        <p className="situation-text">"{situation}"</p>
                                     </div>
                                 )}
                             </div>
 
                             {result && (
-                                <div className="animate-fadeIn">
-                                    <div className="border-t border-gray-200 pt-6">
-                                        <div className="space-y-6">
+                                <div className="results-section">
+                                    <div className="results-divider">
+                                        <div className="results-content">
                                             <div>
-                                                <p className="text-lg font-semibold mb-3" style={{ color: '#1E5A6E' }}>{t('analysisTitle')}</p>
-                                                <div className="rounded-lg p-4" style={{ backgroundColor: '#E8F4F8' }}>
-                                                    <p style={{ color: '#1E5A6E' }}>
-                                                        {result.judgment}
-                                                    </p>
+                                                <p className="result-item-title">{t('analysisTitle')}</p>
+                                                <div className="result-box-1">
+                                                    <p className="result-text">{result.judgment}</p>
                                                 </div>
                                             </div>
                                             
                                             <div>
-                                                <p className="text-lg font-semibold mb-3" style={{ color: '#1E5A6E' }}>{t('adviceTitle')}</p>
-                                                <div className="rounded-lg p-4" style={{ backgroundColor: '#D4EBF1' }}>
-                                                    <p style={{ color: '#1E5A6E' }}>
-                                                        {result.advice}
-                                                    </p>
+                                                <p className="result-item-title">{t('adviceTitle')}</p>
+                                                <div className="result-box-2">
+                                                    <p className="result-text">{result.advice}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -315,13 +502,7 @@
                                                 setResult(null);
                                                 setDisplayScore(0);
                                             }}
-                                            className="mt-6 w-full py-3 border-2 rounded-lg font-semibold transition-colors"
-                                            style={{ 
-                                                borderColor: '#3B9AB2', 
-                                                color: '#3B9AB2' 
-                                            }}
-                                            onMouseEnter={(e) => e.target.style.backgroundColor = '#E8F4F8'}
-                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                            className="try-another-btn"
                                         >
                                             {t('tryAnotherButton')}
                                         </button>
