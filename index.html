@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trust Meter - Evaluate Trust Situations</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://unpkg.com/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const TRANSLATIONS = {
+            "en-US": {
+                "title": "Trust Meter",
+                "subtitle": "Share a trust situation and get perspective",
+                "inputLabel": "What's the trust situation?",
+                "inputPlaceholder": "My friend borrowed money and said they'd pay me back last week...",
+                "exampleLateRepayment": "Late loan repayment",
+                "exampleSecretSharing": "Shared my secret",
+                "exampleCancelledPlans": "Always cancels",
+                "exampleWhiteLie": "Small lie",
+                "grievanceLateRepayment": "My friend borrowed money and hasn't paid me back on time",
+                "grievanceSecretSharing": "Someone shared something I told them in confidence",
+                "grievanceCancelledPlans": "My friend keeps canceling plans at the last minute",
+                "grievanceWhiteLie": "I caught someone in a small lie about where they were",
+                "errorMessage": "Please describe a trust situation to analyze!",
+                "analyzeButton": "Evaluate this situation",
+                "analyzingButton": "Analyzing...",
+                "analysisTitle": "Perspective",
+                "adviceTitle": "What to Consider",
+                "tryAnotherButton": "Evaluate another situation",
+                "failedAnalysis": "Failed to analyze situation. Please try again!",
+                "apiNotAvailable": "This demo requires Claude API access. Please enter a situation to see the interface."
+            }
+        };
+
+        const browserLocale = navigator.languages?.[0] || navigator.language || 'en-US';
+        const findMatchingLocale = (locale) => {
+            if (TRANSLATIONS[locale]) return locale;
+            const lang = locale.split('-')[0];
+            const match = Object.keys(TRANSLATIONS).find(key => key.startsWith(lang + '-'));
+            return match || 'en-US';
+        };
+        const locale = findMatchingLocale(browserLocale);
+        const t = (key) => TRANSLATIONS[locale]?.[key] || TRANSLATIONS['en-US'][key] || key;
+
+        const TrustMeter = () => {
+            const [situation, setSituation] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [result, setResult] = useState(null);
+            const [error, setError] = useState('');
+            const [displayScore, setDisplayScore] = useState(0);
+
+            const exampleSituations = [
+                { label: t('exampleLateRepayment'), text: t('grievanceLateRepayment') },
+                { label: t('exampleSecretSharing'), text: t('grievanceSecretSharing') },
+                { label: t('exampleCancelledPlans'), text: t('grievanceCancelledPlans') },
+                { label: t('exampleWhiteLie'), text: t('grievanceWhiteLie') }
+            ];
+
+            const analyzeSituation = async () => {
+                if (!situation.trim()) {
+                    setError(t('errorMessage'));
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+
+                try {
+                    // Check if Claude API is available
+                    if (typeof window.claude === 'undefined' || typeof window.claude.complete !== 'function') {
+                        // Demo mode - show example result
+                        const demoResult = {
+                            score: 45,
+                            category: "Moderate concern (This needs a conversation)",
+                            judgment: "This situation shows a pattern that's worth addressing. While it may not be intentional, repeated behavior that affects you deserves open communication.",
+                            advice: "Consider having a calm, honest conversation about how this makes you feel. Use 'I' statements and focus on the pattern rather than attacking their character."
+                        };
+                        setResult(demoResult);
+                        animateScore(demoResult.score);
+                        setLoading(false);
+                        return;
+                    }
+
+                    const prompt = `You are a thoughtful relationship counselor analyzing trust situations. Evaluate the following trust concern and rate it on a scale from 0 to 100, where:
+                    - 0-20: Minor concern (This seems like a misunderstanding or one-time slip)
+                    - 21-40: Worth noting (Keep an eye on this pattern)
+                    - 41-60: Moderate concern (This needs a conversation)
+                    - 61-80: Serious concern (Trust has been compromised)
+                    - 81-100: Critical issue (This is a major breach of trust)
+
+                    Situation: "${situation}"
+
+                    Respond ONLY with a valid JSON object in this exact format:
+                    {
+                        "score": [number between 0-100],
+                        "category": "[one of the category names above]",
+                        "judgment": "[A compassionate but honest 1-2 sentence assessment of the situation]",
+                        "advice": "[A practical suggestion for how to approach this in 1-2 sentences]"
+                    }
+
+                    DO NOT OUTPUT ANYTHING OTHER THAN VALID JSON.
+
+                    Please respond in ${locale} language`;
+
+                    const response = await window.claude.complete(prompt);
+                    const data = JSON.parse(response);
+                    setResult(data);
+                    animateScore(data.score);
+                } catch (err) {
+                    setError(t('failedAnalysis'));
+                    console.error('Error:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const animateScore = (targetScore) => {
+                const duration = 1500;
+                const startTime = Date.now();
+                const startScore = 0;
+
+                const updateScore = () => {
+                    const now = Date.now();
+                    const progress = Math.min((now - startTime) / duration, 1);
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    const currentScore = Math.round(startScore + (targetScore - startScore) * easeOut);
+                    setDisplayScore(currentScore);
+                    if (progress < 1) {
+                        requestAnimationFrame(updateScore);
+                    }
+                };
+                requestAnimationFrame(updateScore);
+            };
+
+            const getGaugeFillDasharray = (score) => {
+                const arcLength = 220;
+                const fillLength = (score / 100) * arcLength;
+                return `${fillLength} ${arcLength}`;
+            };
+
+            return (
+                <div className="min-h-screen p-8" style={{ backgroundColor: '#E8F4F8' }}>
+                    <div className="max-w-2xl mx-auto">
+                        <h1 className="text-5xl font-bold text-center mb-2" style={{ color: '#1E5A6E' }}>
+                            {t('title')}
+                        </h1>
+                        <p className="text-center mb-8" style={{ color: '#2C7A8C' }}>
+                            {t('subtitle')}
+                        </p>
+
+                        <div className="bg-white rounded-2xl shadow-xl p-8">
+                            <div className="flex flex-col items-center mb-8">
+                                <div className="relative w-80 h-48 mb-4">
+                                    <svg viewBox="0 0 200 130" className="w-full h-full">
+                                        <path
+                                            d="M 30 100 A 70 70 0 0 1 170 100"
+                                            fill="none"
+                                            stroke="#E5E7EB"
+                                            strokeWidth="20"
+                                            strokeLinecap="round"
+                                        />
+                                        <path
+                                            d="M 30 100 A 70 70 0 0 1 170 100"
+                                            fill="none"
+                                            stroke="#3B9AB2"
+                                            strokeWidth="20"
+                                            strokeLinecap="round"
+                                            strokeDasharray={getGaugeFillDasharray(displayScore)}
+                                            className="transition-all duration-1500 ease-out"
+                                        />
+                                        <text x="28" y="125" textAnchor="middle" className="text-xs font-medium" fill="#1E5A6E">0</text>
+                                        <text x="100" y="15" textAnchor="middle" className="text-xs font-medium" fill="#1E5A6E">50</text>
+                                        <text x="172" y="125" textAnchor="middle" className="text-xs font-medium" fill="#1E5A6E">100</text>
+                                    </svg>
+                                    
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="text-center mt-16">
+                                            <span className="text-5xl font-bold block" style={{ color: '#3B9AB2' }}>
+                                                {result ? displayScore : 0}%
+                                            </span>
+                                            {result && (
+                                                <span className="text-sm font-medium mt-1 block" style={{ color: '#3B9AB2' }}>
+                                                    {result.category}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-lg font-semibold mb-3" style={{ color: '#1E5A6E' }}>
+                                    {t('inputLabel')}
+                                </label>
+                                
+                                {!result ? (
+                                    <>
+                                        <textarea
+                                            value={situation}
+                                            onChange={(e) => setSituation(e.target.value)}
+                                            placeholder={t('inputPlaceholder')}
+                                            className="w-full p-4 border-2 rounded-lg focus:outline-none resize-none"
+                                            style={{ borderColor: 'rgba(59, 154, 178, 0.3)' }}
+                                            onFocus={(e) => e.target.style.borderColor = '#3B9AB2'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(59, 154, 178, 0.3)'}
+                                            rows={4}
+                                        />
+                                        
+                                        <div className="mt-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                {exampleSituations.map((example, index) => (
+                                                    <button
+                                                        key={index}
+                                                        onClick={() => setSituation(example.text)}
+                                                        className="px-3 py-1 text-sm border rounded-full transition-colors"
+                                                        style={{ 
+                                                            borderColor: '#3B9AB2',
+                                                            color: '#1E5A6E',
+                                                            backgroundColor: 'white'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.target.style.backgroundColor = '#E8F4F8';
+                                                            e.target.style.color = '#3B9AB2';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.target.style.backgroundColor = 'white';
+                                                            e.target.style.color = '#1E5A6E';
+                                                        }}
+                                                    >
+                                                        {example.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        
+                                        {error && (
+                                            <div className="mt-3 flex items-center text-red-600">
+                                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                                <span>{error}</span>
+                                            </div>
+                                        )}
+
+                                        <button
+                                            onClick={analyzeSituation}
+                                            disabled={loading}
+                                            className="mt-4 w-full py-4 rounded-lg font-bold text-white transition-all transform hover:scale-105"
+                                            style={{
+                                                backgroundColor: loading ? '#78C2D4' : '#3B9AB2',
+                                            }}
+                                            onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#2A7A8F')}
+                                            onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = '#3B9AB2')}
+                                        >
+                                            {loading ? t('analyzingButton') : t('analyzeButton')}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <p className="italic" style={{ color: '#1E5A6E' }}>"{situation}"</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {result && (
+                                <div className="animate-fadeIn">
+                                    <div className="border-t border-gray-200 pt-6">
+                                        <div className="space-y-6">
+                                            <div>
+                                                <p className="text-lg font-semibold mb-3" style={{ color: '#1E5A6E' }}>{t('analysisTitle')}</p>
+                                                <div className="rounded-lg p-4" style={{ backgroundColor: '#E8F4F8' }}>
+                                                    <p style={{ color: '#1E5A6E' }}>
+                                                        {result.judgment}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <p className="text-lg font-semibold mb-3" style={{ color: '#1E5A6E' }}>{t('adviceTitle')}</p>
+                                                <div className="rounded-lg p-4" style={{ backgroundColor: '#D4EBF1' }}>
+                                                    <p style={{ color: '#1E5A6E' }}>
+                                                        {result.advice}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
+                                                setSituation('');
+                                                setResult(null);
+                                                setDisplayScore(0);
+                                            }}
+                                            className="mt-6 w-full py-3 border-2 rounded-lg font-semibold transition-colors"
+                                            style={{ 
+                                                borderColor: '#3B9AB2', 
+                                                color: '#3B9AB2' 
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.backgroundColor = '#E8F4F8'}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                        >
+                                            {t('tryAnotherButton')}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<TrustMeter />, document.getElementById('root'));
+    </script>
+</body>
+</html>
