@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trust Meter - Evaluate Trust Situations</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -16,15 +13,12 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #E8F4F8;
+            min-height: 100vh;
+            padding: 2rem;
         }
 
         .container {
-            min-height: 100vh;
-            padding: 2rem;
-            background-color: #E8F4F8;
-        }
-
-        .max-w-2xl {
             max-width: 42rem;
             margin: 0 auto;
         }
@@ -41,12 +35,13 @@
             text-align: center;
             margin-bottom: 2rem;
             color: #2C7A8C;
+            font-size: 1rem;
         }
 
         .card {
             background: white;
             border-radius: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             padding: 2rem;
         }
 
@@ -71,7 +66,10 @@
 
         .gauge-score {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -85,16 +83,15 @@
         .score-number {
             font-size: 3rem;
             font-weight: bold;
-            display: block;
             color: #3B9AB2;
         }
 
         .score-category {
             font-size: 0.875rem;
             font-weight: 500;
-            margin-top: 0.25rem;
-            display: block;
+            margin-top: 0.5rem;
             color: #3B9AB2;
+            display: block;
         }
 
         .input-section {
@@ -117,7 +114,6 @@
             resize: none;
             font-family: inherit;
             font-size: 1rem;
-            transition: border-color 0.2s;
         }
 
         .textarea:focus {
@@ -140,7 +136,6 @@
             background: white;
             color: #1E5A6E;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
         .example-btn:hover {
@@ -153,6 +148,7 @@
             display: flex;
             align-items: center;
             color: #DC2626;
+            font-size: 0.875rem;
         }
 
         .error-icon {
@@ -171,13 +167,11 @@
             background-color: #3B9AB2;
             border: none;
             cursor: pointer;
-            transition: all 0.2s;
             font-size: 1rem;
         }
 
         .analyze-btn:hover:not(:disabled) {
             background-color: #2A7A8F;
-            transform: scale(1.05);
         }
 
         .analyze-btn:disabled {
@@ -203,6 +197,7 @@
         .results-divider {
             border-top: 1px solid #E5E7EB;
             padding-top: 1.5rem;
+            margin-top: 1rem;
         }
 
         .results-content {
@@ -232,6 +227,7 @@
 
         .result-text {
             color: #1E5A6E;
+            line-height: 1.6;
         }
 
         .try-another-btn {
@@ -244,12 +240,15 @@
             color: #3B9AB2;
             background: transparent;
             cursor: pointer;
-            transition: background-color 0.2s;
             font-size: 1rem;
         }
 
         .try-another-btn:hover {
             background-color: #E8F4F8;
+        }
+
+        .hidden {
+            display: none;
         }
 
         @keyframes fadeIn {
@@ -264,6 +263,10 @@
         }
 
         @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+            
             .title {
                 font-size: 2rem;
             }
@@ -276,246 +279,202 @@
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="container">
+        <h1 class="title">Trust Meter</h1>
+        <p class="subtitle">Share a trust situation and get perspective</p>
 
-    <script type="text/babel">
-        const { useState } = React;
-
-        const TRANSLATIONS = {
-            "en-US": {
-                "title": "Trust Meter",
-                "subtitle": "Share a trust situation and get perspective",
-                "inputLabel": "What's the trust situation?",
-                "inputPlaceholder": "My friend borrowed money and said they'd pay me back last week...",
-                "exampleLateRepayment": "Late loan repayment",
-                "exampleSecretSharing": "Shared my secret",
-                "exampleCancelledPlans": "Always cancels",
-                "exampleWhiteLie": "Small lie",
-                "grievanceLateRepayment": "My friend borrowed money and hasn't paid me back on time",
-                "grievanceSecretSharing": "Someone shared something I told them in confidence",
-                "grievanceCancelledPlans": "My friend keeps canceling plans at the last minute",
-                "grievanceWhiteLie": "I caught someone in a small lie about where they were",
-                "errorMessage": "Please describe a trust situation to analyze!",
-                "analyzeButton": "Evaluate this situation",
-                "analyzingButton": "Analyzing...",
-                "analysisTitle": "Perspective",
-                "adviceTitle": "What to Consider",
-                "tryAnotherButton": "Evaluate another situation",
-                "failedAnalysis": "Failed to analyze situation. Please try again!"
-            }
-        };
-
-        const browserLocale = navigator.languages?.[0] || navigator.language || 'en-US';
-        const findMatchingLocale = (locale) => {
-            if (TRANSLATIONS[locale]) return locale;
-            const lang = locale.split('-')[0];
-            const match = Object.keys(TRANSLATIONS).find(key => key.startsWith(lang + '-'));
-            return match || 'en-US';
-        };
-        const locale = findMatchingLocale(browserLocale);
-        const t = (key) => TRANSLATIONS[locale]?.[key] || TRANSLATIONS['en-US'][key] || key;
-
-        const TrustMeter = () => {
-            const [situation, setSituation] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [result, setResult] = useState(null);
-            const [error, setError] = useState('');
-            const [displayScore, setDisplayScore] = useState(0);
-
-            const exampleSituations = [
-                { label: t('exampleLateRepayment'), text: t('grievanceLateRepayment') },
-                { label: t('exampleSecretSharing'), text: t('grievanceSecretSharing') },
-                { label: t('exampleCancelledPlans'), text: t('grievanceCancelledPlans') },
-                { label: t('exampleWhiteLie'), text: t('grievanceWhiteLie') }
-            ];
-
-            const analyzeSituation = async () => {
-                if (!situation.trim()) {
-                    setError(t('errorMessage'));
-                    return;
-                }
-
-                setLoading(true);
-                setError('');
-
-                try {
-                    // Demo mode - show example result
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+        <div class="card">
+            <div class="gauge-container">
+                <div class="gauge-wrapper">
+                    <svg viewBox="0 0 200 130" class="gauge-svg">
+                        <path
+                            d="M 30 100 A 70 70 0 0 1 170 100"
+                            fill="none"
+                            stroke="#E5E7EB"
+                            stroke-width="20"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            id="gauge-fill"
+                            d="M 30 100 A 70 70 0 0 1 170 100"
+                            fill="none"
+                            stroke="#3B9AB2"
+                            stroke-width="20"
+                            stroke-linecap="round"
+                            stroke-dasharray="0 220"
+                            style="transition: stroke-dasharray 1.5s ease-out"
+                        />
+                        <text x="28" y="125" text-anchor="middle" font-size="12" font-weight="500" fill="#1E5A6E">0</text>
+                        <text x="100" y="15" text-anchor="middle" font-size="12" font-weight="500" fill="#1E5A6E">50</text>
+                        <text x="172" y="125" text-anchor="middle" font-size="12" font-weight="500" fill="#1E5A6E">100</text>
+                    </svg>
                     
-                    const demoResult = {
-                        score: 45,
-                        category: "Moderate concern (This needs a conversation)",
-                        judgment: "This situation shows a pattern that's worth addressing. While it may not be intentional, repeated behavior that affects you deserves open communication.",
-                        advice: "Consider having a calm, honest conversation about how this makes you feel. Use 'I' statements and focus on the pattern rather than attacking their character."
-                    };
-                    setResult(demoResult);
-                    animateScore(demoResult.score);
-                } catch (err) {
-                    setError(t('failedAnalysis'));
-                    console.error('Error:', err);
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            const animateScore = (targetScore) => {
-                const duration = 1500;
-                const startTime = Date.now();
-                const startScore = 0;
-
-                const updateScore = () => {
-                    const now = Date.now();
-                    const progress = Math.min((now - startTime) / duration, 1);
-                    const easeOut = 1 - Math.pow(1 - progress, 3);
-                    const currentScore = Math.round(startScore + (targetScore - startScore) * easeOut);
-                    setDisplayScore(currentScore);
-                    if (progress < 1) {
-                        requestAnimationFrame(updateScore);
-                    }
-                };
-                requestAnimationFrame(updateScore);
-            };
-
-            const getGaugeFillDasharray = (score) => {
-                const arcLength = 220;
-                const fillLength = (score / 100) * arcLength;
-                return `${fillLength} ${arcLength}`;
-            };
-
-            return (
-                <div className="container">
-                    <div className="max-w-2xl">
-                        <h1 className="title">{t('title')}</h1>
-                        <p className="subtitle">{t('subtitle')}</p>
-
-                        <div className="card">
-                            <div className="gauge-container">
-                                <div className="gauge-wrapper">
-                                    <svg viewBox="0 0 200 130" className="gauge-svg">
-                                        <path
-                                            d="M 30 100 A 70 70 0 0 1 170 100"
-                                            fill="none"
-                                            stroke="#E5E7EB"
-                                            strokeWidth="20"
-                                            strokeLinecap="round"
-                                        />
-                                        <path
-                                            d="M 30 100 A 70 70 0 0 1 170 100"
-                                            fill="none"
-                                            stroke="#3B9AB2"
-                                            strokeWidth="20"
-                                            strokeLinecap="round"
-                                            strokeDasharray={getGaugeFillDasharray(displayScore)}
-                                            style={{transition: 'stroke-dasharray 1.5s ease-out'}}
-                                        />
-                                        <text x="28" y="125" textAnchor="middle" fontSize="12" fontWeight="500" fill="#1E5A6E">0</text>
-                                        <text x="100" y="15" textAnchor="middle" fontSize="12" fontWeight="500" fill="#1E5A6E">50</text>
-                                        <text x="172" y="125" textAnchor="middle" fontSize="12" fontWeight="500" fill="#1E5A6E">100</text>
-                                    </svg>
-                                    
-                                    <div className="gauge-score">
-                                        <div className="score-content">
-                                            <span className="score-number">
-                                                {result ? displayScore : 0}%
-                                            </span>
-                                            {result && (
-                                                <span className="score-category">
-                                                    {result.category}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="input-section">
-                                <label className="label">{t('inputLabel')}</label>
-                                
-                                {!result ? (
-                                    <>
-                                        <textarea
-                                            value={situation}
-                                            onChange={(e) => setSituation(e.target.value)}
-                                            placeholder={t('inputPlaceholder')}
-                                            className="textarea"
-                                            rows={4}
-                                        />
-                                        
-                                        <div className="example-buttons">
-                                            {exampleSituations.map((example, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => setSituation(example.text)}
-                                                    className="example-btn"
-                                                >
-                                                    {example.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        
-                                        {error && (
-                                            <div className="error-message">
-                                                <svg className="error-icon" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                </svg>
-                                                <span>{error}</span>
-                                            </div>
-                                        )}
-
-                                        <button
-                                            onClick={analyzeSituation}
-                                            disabled={loading}
-                                            className="analyze-btn"
-                                        >
-                                            {loading ? t('analyzingButton') : t('analyzeButton')}
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="situation-display">
-                                        <p className="situation-text">"{situation}"</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {result && (
-                                <div className="results-section">
-                                    <div className="results-divider">
-                                        <div className="results-content">
-                                            <div>
-                                                <p className="result-item-title">{t('analysisTitle')}</p>
-                                                <div className="result-box-1">
-                                                    <p className="result-text">{result.judgment}</p>
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <p className="result-item-title">{t('adviceTitle')}</p>
-                                                <div className="result-box-2">
-                                                    <p className="result-text">{result.advice}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => {
-                                                setSituation('');
-                                                setResult(null);
-                                                setDisplayScore(0);
-                                            }}
-                                            className="try-another-btn"
-                                        >
-                                            {t('tryAnotherButton')}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                    <div class="gauge-score">
+                        <div class="score-content">
+                            <span class="score-number" id="score-display">0%</span>
+                            <span class="score-category hidden" id="score-category"></span>
                         </div>
                     </div>
                 </div>
-            );
-        };
+            </div>
 
-        ReactDOM.render(<TrustMeter />, document.getElementById('root'));
+            <div class="input-section">
+                <label class="label">What's the trust situation?</label>
+                
+                <div id="input-area">
+                    <textarea
+                        id="situation-input"
+                        placeholder="My friend borrowed money and said they'd pay me back last week..."
+                        class="textarea"
+                        rows="4"
+                    ></textarea>
+                    
+                    <div class="example-buttons">
+                        <button class="example-btn" onclick="setExample('My friend borrowed money and hasn\'t paid me back on time')">Late loan repayment</button>
+                        <button class="example-btn" onclick="setExample('Someone shared something I told them in confidence')">Shared my secret</button>
+                        <button class="example-btn" onclick="setExample('My friend keeps canceling plans at the last minute')">Always cancels</button>
+                        <button class="example-btn" onclick="setExample('I caught someone in a small lie about where they were')">Small lie</button>
+                    </div>
+                    
+                    <div id="error-message" class="error-message hidden">
+                        <svg class="error-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Please describe a trust situation to analyze!</span>
+                    </div>
+
+                    <button onclick="analyzeSituation()" class="analyze-btn" id="analyze-btn">
+                        Evaluate this situation
+                    </button>
+                </div>
+
+                <div id="situation-display" class="situation-display hidden">
+                    <p class="situation-text" id="situation-text"></p>
+                </div>
+            </div>
+
+            <div id="results" class="results-section hidden">
+                <div class="results-divider">
+                    <div class="results-content">
+                        <div>
+                            <p class="result-item-title">Perspective</p>
+                            <div class="result-box-1">
+                                <p class="result-text" id="judgment-text"></p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <p class="result-item-title">What to Consider</p>
+                            <div class="result-box-2">
+                                <p class="result-text" id="advice-text"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="reset()" class="try-another-btn">
+                        Evaluate another situation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setExample(text) {
+            document.getElementById('situation-input').value = text;
+            document.getElementById('error-message').classList.add('hidden');
+        }
+
+        function analyzeSituation() {
+            const input = document.getElementById('situation-input');
+            const situation = input.value.trim();
+            
+            if (!situation) {
+                document.getElementById('error-message').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('error-message').classList.add('hidden');
+            const btn = document.getElementById('analyze-btn');
+            btn.disabled = true;
+            btn.textContent = 'Analyzing...';
+
+            // Simulate analysis
+            setTimeout(() => {
+                const demoResult = {
+                    score: 45,
+                    category: "Moderate concern (This needs a conversation)",
+                    judgment: "This situation shows a pattern that's worth addressing. While it may not be intentional, repeated behavior that affects you deserves open communication.",
+                    advice: "Consider having a calm, honest conversation about how this makes you feel. Use 'I' statements and focus on the pattern rather than attacking their character."
+                };
+
+                // Hide input area
+                document.getElementById('input-area').classList.add('hidden');
+                
+                // Show situation display
+                document.getElementById('situation-text').textContent = `"${situation}"`;
+                document.getElementById('situation-display').classList.remove('hidden');
+
+                // Animate score
+                animateScore(demoResult.score, demoResult.category);
+
+                // Show results
+                document.getElementById('judgment-text').textContent = demoResult.judgment;
+                document.getElementById('advice-text').textContent = demoResult.advice;
+                document.getElementById('results').classList.remove('hidden');
+
+                btn.disabled = false;
+                btn.textContent = 'Evaluate this situation';
+            }, 1500);
+        }
+
+        function animateScore(targetScore, category) {
+            const duration = 1500;
+            const startTime = Date.now();
+            const arcLength = 220;
+
+            function update() {
+                const now = Date.now();
+                const progress = Math.min((now - startTime) / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const currentScore = Math.round(targetScore * easeOut);
+                
+                // Update display
+                document.getElementById('score-display').textContent = currentScore + '%';
+                
+                // Update gauge
+                const fillLength = (currentScore / 100) * arcLength;
+                document.getElementById('gauge-fill').setAttribute('stroke-dasharray', `${fillLength} ${arcLength}`);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    // Show category
+                    const categoryEl = document.getElementById('score-category');
+                    categoryEl.textContent = category;
+                    categoryEl.classList.remove('hidden');
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        function reset() {
+            // Reset input
+            document.getElementById('situation-input').value = '';
+            
+            // Hide results
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('situation-display').classList.add('hidden');
+            
+            // Show input area
+            document.getElementById('input-area').classList.remove('hidden');
+            
+            // Reset gauge
+            document.getElementById('score-display').textContent = '0%';
+            document.getElementById('score-category').classList.add('hidden');
+            document.getElementById('gauge-fill').setAttribute('stroke-dasharray', '0 220');
+        }
     </script>
 </body>
 </html>
